@@ -11,18 +11,23 @@ import { Typography, Spacing } from '@/constants/theme';
 import { Card } from '@/components/ui/Card';
 import { Header } from '@/components/ui/Header';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+
+  const editProfileRoute =
+    user?.role === 'driver' ? '/(driver)/edit-profile' : '/(parent)/edit-profile';
 
   const sections = [
     {
       title: 'Conta',
       items: [
-        { icon: 'person.fill', label: 'Editar perfil', route: '/(parent)/edit-profile' },
+        { icon: 'person.fill', label: 'Editar perfil', route: editProfileRoute },
         { icon: 'key.fill', label: 'Alterar senha', route: '/(auth)/reset-password' },
       ],
     },

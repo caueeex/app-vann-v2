@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/hooks/useAuth';
-import { useUser } from '@/contexts/UserContext';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -22,11 +21,10 @@ export default function LoginScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const insets = useSafeAreaInsets();
   const { login, isLoading } = useAuth();
-  const { userRole } = useUser();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [authError, setAuthError] = useState('');
   const fadeAnim = useState(new Animated.Value(0))[0];
 
   useEffect(() => {
@@ -38,18 +36,12 @@ export default function LoginScreen() {
   }, []);
 
   const handleLogin = async () => {
-    // Validação removida - permite login direto
+    setAuthError('');
     try {
-      await login(email || 'teste@vann.com', password || '123456');
-    } catch (error) {
-      // Ignorar erros de login
-    }
-    
-    // Redirecionar baseado no tipo de usuário selecionado
-    if (userRole === 'driver') {
-      router.replace('/(driver)/dashboard');
-    } else {
-      router.replace('/(parent)/dashboard');
+      await login(email.trim(), password);
+      router.replace('/');
+    } catch {
+      setAuthError('Nao foi possivel entrar. Verifique email e senha.');
     }
   };
 
@@ -116,6 +108,12 @@ export default function LoginScreen() {
               onPress={() => router.push('/(auth)/forgot-password')}
               style={styles.forgotButton}
             />
+
+            {!!authError && (
+              <Text style={[styles.authErrorText, { color: colors.error }]}>
+                {authError}
+              </Text>
+            )}
 
             {/* Botão principal aprimorado */}
             <Button
@@ -243,6 +241,11 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     marginTop: -Spacing.xs,
     marginBottom: Spacing.lg,
+  },
+  authErrorText: {
+    ...Typography.styles.caption,
+    marginBottom: Spacing.md,
+    textAlign: 'center',
   },
   loginButton: {
     marginTop: Spacing.lg,

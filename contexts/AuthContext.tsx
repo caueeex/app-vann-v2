@@ -6,6 +6,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserRole } from '@/types/common';
 import { User, Parent, Driver } from '@/types/user';
+import { clearToken, getToken, saveToken } from '@/services/storage/session';
+import { loginRequest, logoutRequest, meRequest, registerRequest } from '@/services/api/auth';
 
 interface AuthContextType {
   user: User | Parent | Driver | null;
@@ -19,9 +21,8 @@ interface AuthContextType {
 
 interface RegisterData {
   email: string;
-  password: string;
+  cpf: string;
   name: string;
-  phone: string;
   role: UserRole;
 }
 
@@ -37,32 +38,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkAuth = async () => {
-    // Simular verificação de token/sessão
-    // Em produção, isso verificaria AsyncStorage ou API
-    setIsLoading(false);
+    setIsLoading(true);
+    try {
+      const token = await getToken();
+      if (!token) {
+        setUser(null);
+        return;
+      }
+
+      const currentUser = await meRequest();
+      setUser(currentUser);
+    } catch {
+      await clearToken();
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simular chamada de API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Mock user data - em produção viria da API
-      const mockUser: User = {
-        id: '1',
-        email,
-        name: 'Usuário Teste',
-        phone: '(11) 99999-9999',
-        role: 'parent',
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      setUser(mockUser);
-    } catch (error) {
-      throw error;
+      const response = await loginRequest(email, password);
+      await saveToken(response.token);
+      setUser(response.user);
+    } catch {
+      throw new Error('Falha no login. Verifique suas credenciais.');
     } finally {
       setIsLoading(false);
     }
@@ -71,23 +72,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: RegisterData) => {
     setIsLoading(true);
     try {
-      // Simular chamada de API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      const newUser: User = {
-        id: Date.now().toString(),
-        email: data.email,
+      const response = await registerRequest({
         name: data.name,
-        phone: data.phone,
+        email: data.email,
+        cpf: data.cpf,
         role: data.role,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      setUser(newUser);
-    } catch (error) {
-      throw error;
+      });
+      await saveToken(response.token);
+      setUser(response.user);
+    } catch {
+      throw new Error('Falha no cadastro. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -96,12 +90,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     setIsLoading(true);
     try {
-      // Simular limpeza de token/sessão
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setUser(null);
-    } catch (error) {
-      throw error;
+      await logoutRequest();
+    } catch {
+      // Mesmo com falha no endpoint, limpamos sessao local.
     } finally {
+      await clearToken();
+      setUser(null);
       setIsLoading(false);
     }
   };

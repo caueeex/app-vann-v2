@@ -10,7 +10,15 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Configure backend API URL
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Update `EXPO_PUBLIC_API_URL` with your backend endpoint (`Vann-Project/api`).
+
+3. Start the app
 
    ```bash
    npx expo start

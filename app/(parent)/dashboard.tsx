@@ -37,6 +37,11 @@ export default function ParentDashboard() {
     return null;
   }, [routes, getDriverById]);
 
+  const trackingRouteId = useMemo(() => {
+    const inProgress = routes.find((r) => r.status === 'in_progress');
+    return inProgress?.id ?? 'r1';
+  }, [routes]);
+
   // Calcular estatísticas do usuário
   const userStats = useMemo(() => {
     // Mock data - em produção viria do backend
@@ -220,7 +225,7 @@ export default function ParentDashboard() {
           {hasActiveTracking ? (
             <Card
               style={[styles.actionCard, { borderLeftWidth: 4, borderLeftColor: colors.primary }]}
-              onPress={() => router.push('/(parent)/tracking/r1')}
+              onPress={() => router.push(`/(parent)/tracking/${trackingRouteId}`)}
             >
               <View style={[styles.actionIconContainer, { backgroundColor: colors.primary + '20' }]}>
                 <IconSymbol name="location.fill" size={24} color={colors.primary} />

@@ -11,11 +11,10 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Typography, Spacing } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Header } from '@/components/ui/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { useUser } from '@/contexts/UserContext';
-// Validação removida temporariamente
+import { validators } from '@/utils/validators';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -28,31 +27,39 @@ export default function RegisterScreen() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
+    cpf: '',
   });
-  const [errors] = useState<Record<string, string>>({});
+  const [authError, setAuthError] = useState('');
+  const onlyDigits = (value: string) => value.replace(/\D/g, '').slice(0, 11);
 
   const handleRegister = async () => {
-    // Validação removida temporariamente - permite cadastro direto
+    setAuthError('');
     if (!userRole) {
       router.push('/(onboarding)/select-profile');
       return;
     }
 
+    if (!formData.name.trim() || !formData.email.trim() || formData.cpf.length !== 11) {
+      setAuthError('Preencha nome, email e CPF com 11 digitos.');
+      return;
+    }
+
+    const emailError = validators.email(formData.email.trim());
+    if (emailError) {
+      setAuthError(emailError);
+      return;
+    }
+
     try {
       await register({
-        email: formData.email || 'teste@vann.com',
-        password: formData.password || '123456',
-        name: formData.name || 'Usuário Teste',
-        phone: formData.phone || '(11) 99999-9999',
+        email: formData.email.trim(),
+        cpf: formData.cpf,
+        name: formData.name.trim(),
         role: userRole,
       });
-      router.replace(userRole === 'parent' ? '/(parent)/dashboard' : '/(driver)/dashboard');
-    } catch (error) {
-      // Em caso de erro, redirecionar mesmo assim
-      router.replace(userRole === 'parent' ? '/(parent)/dashboard' : '/(driver)/dashboard');
+      router.replace('/');
+    } catch {
+      setAuthError('Nao foi possivel criar a conta. Revise os dados e tente novamente.');
     }
   };
 
@@ -90,31 +97,16 @@ export default function RegisterScreen() {
           />
 
           <Input
-            label="Telefone"
-            placeholder="(11) 99999-9999"
-            value={formData.phone}
-            onChangeText={(text) => setFormData({ ...formData, phone: text })}
-            keyboardType="phone-pad"
-            leftIcon="phone"
-          />
-
-          <Input
-            label="Senha"
-            placeholder="Mínimo 6 caracteres"
-            value={formData.password}
-            onChangeText={(text) => setFormData({ ...formData, password: text })}
-            secureTextEntry
+            label="CPF"
+            placeholder="Apenas numeros (11 digitos)"
+            value={formData.cpf}
+            onChangeText={(text) => setFormData({ ...formData, cpf: onlyDigits(text) })}
+            keyboardType="number-pad"
             leftIcon="lock"
           />
-
-          <Input
-            label="Confirmar senha"
-            placeholder="Digite a senha novamente"
-            value={formData.confirmPassword}
-            onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
-            secureTextEntry
-            leftIcon="lock"
-          />
+          <Text style={[styles.helperText, { color: colors.textSecondary }]}>
+            Seu CPF sera sua senha inicial no primeiro acesso.
+          </Text>
 
           <Button
             title="Criar conta"
@@ -125,6 +117,11 @@ export default function RegisterScreen() {
             onPress={handleRegister}
             style={styles.registerButton}
           />
+          {!!authError && (
+            <Text style={[styles.authErrorText, { color: colors.error }]}>
+              {authError}
+            </Text>
+          )}
 
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: colors.textSecondary }]}>
@@ -157,6 +154,16 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     marginTop: Spacing.md,
+  },
+  authErrorText: {
+    ...Typography.styles.caption,
+    textAlign: 'center',
+    marginTop: Spacing.sm,
+  },
+  helperText: {
+    ...Typography.styles.caption,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.md,
   },
   footer: {
     flexDirection: 'row',

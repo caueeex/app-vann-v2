@@ -20,6 +20,7 @@ export default function SharedLayout() {
       <Stack.Screen name="settings" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="contracts/[id]" />
+      <Stack.Screen name="contracts/new" />
       <Stack.Screen name="payments" />
       <Stack.Screen name="terms" />
       <Stack.Screen name="privacy" />
